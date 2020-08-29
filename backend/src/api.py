@@ -32,6 +32,10 @@ db_drop_and_create_all()
 
 @app.route('/drinks')
 def get_drinks():
+    """
+    :returns all drinks in json format.
+    No authentication nor authorization needed
+    """
     drinks = Drink.query.all()
 
     return jsonify({
@@ -54,6 +58,10 @@ def get_drinks():
 @app.route('/drinks-detail')
 @requires_auth('get:drinks-detail')
 def get_drinks_detail(payload):
+    """
+    :returns: all drinks in json with detailed recipe
+    only barista & managers can access it.
+    """
     drinks = Drink.query.all()
 
     return jsonify({
@@ -77,14 +85,20 @@ def get_drinks_detail(payload):
 @app.route('/drinks', methods=['POST'])
 @requires_auth('post:drinks')
 def post_drink(payload):
+    """
+    Creates a new drink.
+    Only accessible for managers
+    """
     body = request.get_json()
     title = body.get('title', None)
     recipe = body.get('recipe', None)
 
     try:
+        # Check if title and recipe included in the body
         if title is None or recipe is None:
             abort(422)
 
+        # Create a new drink object
         new_drink = Drink(title=title, recipe=json.dumps(recipe))
         new_drink.insert()
 
@@ -95,6 +109,7 @@ def post_drink(payload):
         }), 200
 
     except:
+        # In case of having errors
         abort(422)
 
 
@@ -115,19 +130,29 @@ def post_drink(payload):
 @app.route('/drinks/<id>', methods=['PATCH'])
 @requires_auth('patch:drinks')
 def update_drink(payload, id):
+    """
+    Updates existing drink by id
+    Only accessible for managers
+    """
+
     drink_to_update = Drink.query.filter_by(id=id).one_or_none()
+    # Check if the drink with this id exists
     if drink_to_update is None:
         abort(404)
     body = request.get_json()
     title = body.get('title', None)
     recipe = body.get('recipe', None)
 
+    # Check if the body contains at least one of the needed fields
     if title is None and recipe is None:
         abort(422)
 
     try:
+        # update the title if included in the request
         if title is not None:
             drink_to_update.title = title
+
+        # update the recipe if included in the request
         if recipe is not None:
             drink_to_update.recipe = json.dumps(recipe)
         drink_to_update.update()
@@ -137,6 +162,7 @@ def update_drink(payload, id):
             "drinks": [drink_to_update.long()]
         }), 200
     except:
+        # In case of failure
         abort(422)
 
 
@@ -156,7 +182,13 @@ def update_drink(payload, id):
 @app.route('/drinks/<id>', methods=['DELETE'])
 @requires_auth('delete:drinks')
 def delete_drink(payload, id):
+    """
+    Deletes an existing drink by id
+    Only accessible for managers
+    """
     drink_to_delete = Drink.query.filter_by(id=id).one_or_none()
+
+    # Check if a drink with this id exists.
     if drink_to_delete is None:
         abort(404)
     try:
@@ -167,6 +199,7 @@ def delete_drink(payload, id):
             "delete": id
         }), 200
     except:
+        # In case of failure
         abort(422)
 
 

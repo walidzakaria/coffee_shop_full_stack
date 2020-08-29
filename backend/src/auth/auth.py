@@ -1,13 +1,14 @@
 import json
+from os import environ
 from flask import request, _request_ctx_stack, abort, jsonify
 from functools import wraps
 from jose import jwt
 from urllib.request import urlopen
 
 
-AUTH0_DOMAIN = 'walid-fsnd.eu.auth0.com'
+AUTH0_DOMAIN = environ.get('AUTH0_DOMAIN')
 ALGORITHMS = ['RS256']
-API_AUDIENCE = 'cofee'
+API_AUDIENCE = environ.get('API_AUDIENCE')
 
 # AuthError Exception
 '''
@@ -83,6 +84,10 @@ def get_token_auth_header():
 
 
 def check_permissions(permission, payload):
+    """
+    Check if the a request contains permission in the header
+    and if the permission matches the required action
+    """
     if 'permissions' not in payload:
         abort(400)
 
@@ -177,6 +182,9 @@ def verify_decode_jwt(token):
 
 
 def requires_auth(permission=''):
+    """
+    Decorator for both authentication & authorization
+    """
     def requires_auth_decorator(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
